@@ -1,0 +1,322 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Assignment 1\n",
+    "\n",
+    "### Question 1: Homework incentives\n",
+    "\n",
+    "Recall the student's problem from the first lecture. We are examining the dynamic incentives that affect a student's choices to submit homework assignments. In every period $t=1,\\ldots,\\check{t}$, the student decides whether to submit an assignment or not. For your convenience, we first copy the code from the lecture's example. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "nAss = 11;\n",
+    "k = 3;\n",
+    "gradeScheme=@(hwGrade,assPassed,finGrade)(0.25*hwGrade*(assPassed>nAss-k)+0.75*finGrade); % Harsh\n",
+    "% gradeScheme=@(hwGrade,assPassed,finGrade)(0.4*hwGrade*assPassed/nAss+0.6*finGrade); % Smooth\n",
+    "effortCost = ones(1,nAss)*0.3;\n",
+    "successPr = 0.9;\n",
+    "hwGrade = 10;\n",
+    "finGradePr = [0 0.05 0.05 0.1 0.15 0.15 0.2 0.15 0.10 0.05 0];\n",
+    "u=@(grade)(grade-10*(grade<5.25));\n",
+    "rho = 0.9;"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "% Initialization\n",
+    "v=nan(nAss+1,nAss+1); UWork=nan(nAss,nAss); UShirk=UWork; work=UWork;\n",
+    "assPassed = ones(11,1)*(0:nAss);\n",
+    "finGrade = (0:10)'*ones(1,nAss+1);\n",
+    "v(nAss+1,:) = finGradePr*u(gradeScheme(hwGrade, assPassed, finGrade));"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "% Solve by Backward Recursion\n",
+    "for ass=nAss:-1:1\n",
+    "    UShirk(ass,1:ass) = rho*v(ass+1,1:ass);\n",
+    "    UWork(ass,1:ass) = successPr*rho*v(ass+1,2:ass+1)+(1-successPr)*UShirk(ass,1:ass)-effortCost(ass);\n",
+    "    work(ass,1:ass)=UWork(ass,1:ass)>UShirk(ass,1:ass);\n",
+    "    v(ass,1:ass) = max([UWork(ass,1:ass);UShirk(ass,1:ass)]);\n",
+    "end"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "work"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let $v_t(x)$ be the student's expected discounted utility just prior to deciding on assignment $t$ if (s)he has passed $x$ of the previous $t-1$ assignments."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "a) **Write the Bellman equations for $v_t$, $1\\leq t<\\check{t}$, and for $v_\\check{t}$ (note that the value for the final assignment needs special attention).**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "b) **Show that these Bellman equations have a unique solution $v_t$, $1\\leq t\\leq\\check{t}$.**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "c) **Show that there exist an optimal strategy for submitting homework assignments that is Markovian. Express this strategy in terms of $v_t$, $1\\leq t\\leq\\check{t}$.**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "d) **Using the code above, numerically analyze how the student's optimal strategy changes when the success probability `successPr` changes from below to above its current value of $0.9$, under both grading schemes. Briefly discuss.**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The remaining part of this question considers a realistic modification of the original homework incentives problem. So far, we assumed that the distribution of the final grade is exogenously given. In particular, regardless of the number of assignments submitted, the probability distribution over final grades was given by"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "% finGradePr = [0 0.05 0.05 0.1 0.15 0.15 0.2 0.15 0.10 0.05 0.0];"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Instead, we now assume that the student can stochastically improve her or his final grade by passing more assignments. In particular, suppose that each assignment passed takes probability masses 0.01 from each of the final grades 4,5,6, and 7 and adds probability masses 0.04/3 to each of the final grades 8,9, and 10."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "e) **Is this modified problem still a nonstationary Markov decision problem? If so, how does the modification change the Bellman equations for $v_t$, $1\\leq t<\\check{t}$, and for $v_\\check{t}$?**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "f) **Adapt the above code to this modified student's problem and solve it numerically. What is the effect on the student's optimal assignment submission choices? In particular, analyze how the student's actions are changed under each grading scheme. Briefly discuss.**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Question 2: Terminating a relationship\n",
+    "\n",
+    "In the first lecture, we also discussed the problem of terminating a relationship. For your convenience, we again copy the example's code below.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "mu = -0.1;\n",
+    "sigma = 0.5;\n",
+    "boundX = [-3 3];\n",
+    "nSuppX = 1001;\n",
+    "\n",
+    "suppX = boundX(1):(boundX(2)-boundX(1))/(nSuppX-1):boundX(2);\n",
+    "deltaX = ones(nSuppX,1)*suppX - suppX'*ones(1,nSuppX);\n",
+    "thresholdX = (deltaX(:,1:end-1)+deltaX(:,2:end))/2;\n",
+    "capPi = normcdf((thresholdX-mu)/sigma);\n",
+    "capPi = [capPi 1-capPi(:,end)];\n",
+    "capPi(:,2:end-1) = capPi(:,2:end-1) - capPi(:,1:end-2);\n",
+    "\n",
+    "% Bellman operator\n",
+    "rho = 0.9;\n",
+    "bellman=@(v)(max([suppX+rho*(capPi*v)';zeros(1,nSuppX)])');\n",
+    "\n",
+    "% Solve by value function iteration\n",
+    "v=0; vOld=1; dist = [];\n",
+    "while max(abs(v-vOld))>1E-9\n",
+    "    vOld = v;\n",
+    "    v = bellman(vOld);\n",
+    "    dist = [dist;max(abs(v-vOld))];\n",
+    "end"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n"
+     ]
+    },
+    {
+     "data": {
+      "image/png": "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AAC8gEAC6CWdTldYWGis3QDANJcOAmDBxo0b7ezsxo8fb5TdAAAtJIBeunPnjhF3AwAEEkDX0tPTAwMD3dzcZs+eLZfLiejTTz+9fPlyZmbmunXriKiqqurdd9997rnn3Nzc/P39T506xXywzW737t3btWvXjBkzpk6dGh4eXlFR0eZEZ8+efeutt65du2b4+JYtW9j7ngCcQiABdKGioiIsLGzRokVnzpzZtGnTF198cfz48enTpw8bNmzMmDEBAQE6nS4kJKSpqSkxMfHEiRNTp07duHFjZWUlEbXejYjWr1+flZW1Z8+e7777bujQoUuWLFGpVK3P5eXl1djY+O677xJRdnZ2XFzc/PnzOfnWAOxDIAF0QalUisViT0/PgQMHent779+/f8KECePHj5dKpcOGDfP09Lx79+6sWbO2bdvm7Ow8cuTITZs2ERHTymm9W1FR0U8//RQXFzd16lRHR8dt27ZJpdKjR4+2Od3OnTuVSuXu3bvffffd1atXT506lYPvDMAFDGoA6IKXl9e4ceNmzpw5ceJET0/PWbNmyWSy1jvY2dm9++67Z8+evXbtWlFRkaHDrY2SkhIi+vzzzw1bGhoafv/99za7OTg4bN26df369ZMnT16zZo2xvw0AfyGQALogFouPHz+elZX1008/ffvtt5988snGjRtXrFhh2KGpqWnp0qUqlcrDw8PFxWXhwoVBQUHtj3P//v3+/fu7u7sbtri7uzs6OrbfkxkHoVarGxsbbWxs+uA7AfARAgmgC9euXfv9999ffvllb29vIvrwww8///zz1oGUlpZWXFycm5srkUiI6MaNGw89jlQqbW5unjFjhr29PbMlKyvL2tq6zW5KpfKjjz7auXNnQkLCjh07YmJi+uRbAfAP7iEBdOHWrVvvvPPOuXPniEin0/3xxx9jxowhIrFYXFlZWV9fzzyC89atW0R09+7d6OhoItJqtczHDbvNmDFj+PDhW7ZsaWxsJKL09PQ333xTrVa3PpdOp3v77beff/75efPmxcbGfv311+np6ex+XQDOIJAAuuDh4REeHv76669Pnjx50qRJN27c2LlzJxH5+Pjk5OQ8//zzs2bNmjFjxquvvvrcc8/NmTPnueeeGzNmTFlZGfNxw24ikSgxMVGlUrm7u0+ePHndunUbN2708fFpfa74+Pjq6uoPPviAiCZMmLBy5cotW7YwUQdg8vAIc4Bu0el0tbW1EonEysqq9Ua9Xs+0kFpaWu7cuSOVSh/6WcNuzJ4qlcre3l4kwl+EAP+GQAIAAF7AH2gAAMALCCQAAOAFBBIAAPACAgkAAHgBgQQAALzw/wFCeuph3Ov0nAAAAABJRU5ErkJggg==\n",
+      "text/plain": [
+       "<IPython.core.display.Image object>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "plot(suppX,v) % plot of value function\n",
+    "title(\"Value function\")\n",
+    "xlabel(\"state x\")\n",
+    "ylabel(\"expected discounted utility v\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "a) **What would happen if uncertainty increases, i.e. the variance `sigma` increases. What if there would be no uncertainty? Briefly motivate your answer and modify and run the code to verify it numerically.**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let $v(x)$ be the expected discounted utility just after learning that the period's state equals $x$, but prior to deciding on continuation."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "b) **Write the Bellman equation for $v$.**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The right hand side of this Bellman equation defines a Bellman operator on the appropriate space of value functions."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "c) **Explicitly define this space of value functions, with the metric suggested by the code. Show that this metric indeed satisfies the three properties a metric should have (see the theory slides). Demonstrate that the resulting metric space is complete. Write the Bellman operator as a mapping from this space into itself.**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "d) **Using all this, prove that the Bellman equation has a unique solution $v$. (Hint: first show that the Bellman operator satisfies Blackwell's sufficient conditions for a contraction.)**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "e) **In the code, we use value function iteration to find the fixed point $v$. What are the convergence properties of this algorithm? How could you adapt it to ensure convergence in fewer iterations?**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Finally, show that there exists a threshold so that it is optimal to quit if the state is below this threshold and to stay if it is above it. To this end, solve the following subproblems."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "f) **Prove that the value function is weakly increasing. (Hint: Apply the contraction mapping theorem twice, first on the space of all value functions and then to the space of all weakly increasing value functions.)** "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "g) **Give an expression for the value of continuing if the state is $x$. Show that this value is strictly increasing in $x$. Conclude that this implies that the optimal stopping rule has the above threshold property.**"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Matlab",
+   "language": "matlab",
+   "name": "matlab"
+  },
+  "language_info": {
+   "codemirror_mode": "octave",
+   "file_extension": ".m",
+   "help_links": [
+    {
+     "text": "MetaKernel Magics",
+     "url": "https://metakernel.readthedocs.io/en/latest/source/README.html"
+    }
+   ],
+   "mimetype": "text/x-octave",
+   "name": "matlab",
+   "version": "0.16.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
